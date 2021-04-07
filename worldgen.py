@@ -48,6 +48,13 @@ def data(st):
 
 
 def print_data(d, expect=None):
+    dr = [[]]
+    for b in d:
+        dr[-1].append(b)
+        if len(dr[-1]) == 8:
+            dr.append([])
+    print(dr[:-1])
+    return
     print()
     col = 0
     for x in d:
@@ -113,7 +120,7 @@ def scramble():
     a += b
     a &= 0xFF
     rand[3] = a
-    #print(hex(a), end=" ")
+    # print(rand)
     return a
 
 
@@ -138,7 +145,11 @@ def gen_chunk(x, y):
         if bit(i, chunk_rand):
             gen_rand_path(focused_edge, edges[i], 0x0A)
 
+    # print_data(chunk_data)
+
     add_bumps(0x0A)
+
+   # print_data(chunk_data)
 
     if bit(3, chunk_rand):
         write_to_chunk(3, 0, 0x0A)
@@ -155,6 +166,8 @@ def gen_chunk(x, y):
 
     biome = chunk_rand >> 4 & 3
     [biome0, biome1, biome2, biome3][biome]()
+
+    # print_data(chunk_data)
 
     return chunk_data
 
@@ -328,15 +341,15 @@ def pos_in_map(x, y, cx, cy):
         return None
 
 
-def gen_map(sd=0):
+def gen_map(sd=0, x=1, y=2):
     global seed, computed_chunks, wanted_chunks
     seed = [(sd & 0xFF000000) >> 24, (sd & 0x00FF0000) >>
             16, (sd & 0x0000FF00) >> 8, sd & 0x000000FF]
-    centre = gen_chunk(1, 2)
+    centre = gen_chunk(x, y)
     if not centre:
         return
     wanted_chunks = set()
-    computed_chunks = {(1, 2): centre}
+    computed_chunks = {(x, y): centre}
     m = map_around_player(centre)
     return m
 
@@ -378,8 +391,9 @@ def print_map(m):
     print()
 
 
-print_map(gen_map(1))
-print_map(full_map_around_player())
+gen_map(0)
+# print_map(gen_map(0))
+# print_map(full_map_around_player())
 
 
 def search_for_map(sd):
@@ -396,8 +410,15 @@ def search_for_map(sd):
             input()
 
 
-for s in range(0x3700000, 0x0FFFFFFF):
-    s = s << 4 | 1
-    search_for_map(s)
-    if(s & 0xffff == 1):
-        print(hex(s))
+# for s in range(0x06521000, 0x0FFFFFFF):
+#     s = s << 4 | 1
+#     search_for_map(s)
+#     if(s & 0xffff == 1):
+#         print(hex(s))
+
+for s in range(0xc382b800, 0xc382b8ff):
+    for x in range(4):
+        for y in range(4):
+            gen_map(s, x, y)
+            if rand[3] == 0x76:
+                print(hex(s), x, y)
