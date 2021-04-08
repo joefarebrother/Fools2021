@@ -23,7 +23,7 @@ hexToBin = {
 }
 
 function bin(num)
-    return hex(num):gsub('.', function(c) return hexToBin[c] end)
+    return (hex(num):gsub('.', function(c) return hexToBin[c] end))
 end
 
 sram_offset = 0xa000
@@ -32,17 +32,17 @@ sram_bank_size = wram_offset - sram_offset
 
 function convert_addr(addr)
     if addr < sram_offset then
-        return {memory2.ROM, addr}
+        return memory2.ROM, addr
     end
     if addr < wram_offset then
-        return {memory2.SRAM, addr - sram_offset + 2 * sram_bank_size}
+        return memory2.SRAM, addr - sram_offset + 2 * sram_bank_size
     end
-    return {memory2.WRAM, addr - wram_offset}
+    return memory2.WRAM, addr - wram_offset
 end
 
 function read(addr)
-    local t = convert_addr(addr)
-    return t[1]:byte(t[2])
+    local reg, new_addr = convert_addr(addr)
+    return reg:byte(new_addr)
 end
 
 sched = {}
@@ -84,5 +84,39 @@ function on_keyhook(k, state)
         keyhooks[k](k, state)
     end
 end
-    
+
+function set_pause_state(s) 
+    if s ~= (gui.get_runmode() == "paused") then
+        exec("pause-emulator")
+    end
+end
+
+function save_state(slot)
+    exec(string.format("save-state $SLOT:%d", slot))
+end
+
+buttons = {}
+for i,b in ipairs(input.controller_info(0,1).buttons) do
+    buttons[b.name] = i-1
+end
+
+forced_input={}
+function on_input()
+    for b,v in pairs(forced_input) do
+        input.set2(0,1,buttons[b],v)
+    end
+end
         
+function exec_hook(addr, cb, persist) 
+    persist = persist or false
+    local area, new_addr = convert_addr(addr)
+    if persist then
+        area:registerexec(new_addr, cb)
+    else
+        local unreg
+        unreg = area:registerexec(new_addr, function(a,v)
+            cb(a,v)
+            area:unregisterexec(new_addr, unreg)
+        end)
+    end
+end
