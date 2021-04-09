@@ -45,14 +45,21 @@ function read(addr)
     return reg:byte(new_addr)
 end
 
-sched = {}
-
+local sched = {}
+local frame_hooks = {}
 function on_frame() 
     local fr = movie.currentframe()
     if sched[fr] then
         sched[fr]()
         sched[fr] = nil
     end
+    for _,h in ipairs(frame_hooks) do
+        h()
+    end
+end
+
+function frame_hook(h)
+    table.insert(frame_hooks, h)
 end
 
 function cancel_sched()
@@ -60,6 +67,10 @@ function cancel_sched()
 end
 
 function wait(n, cb)
+    if n == 0 then
+        cb()
+        return
+    end
     local fr = movie.currentframe() + n
     local cur = sched[fr]
     if cur then
@@ -86,37 +97,59 @@ function on_keyhook(k, state)
 end
 
 function set_pause_state(s) 
-    if s ~= (gui.get_runmode() == "paused") then
+    if s ~= is_paused() then
         exec("pause-emulator")
     end
+end
+
+function is_paused()
+    return gui.get_runmode() == "pause"
 end
 
 function save_state(slot)
     exec(string.format("save-state $SLOT:%d", slot))
 end
 
+function load_state(slot)
+    exec(string.format("load-state $SLOT:%d", slot))
+end
+
 buttons = {}
+cur_input = {}
 for i,b in ipairs(input.controller_info(0,1).buttons) do
     buttons[b.name] = i-1
+    cur_input[b.name] = 0
 end
 
 forced_input={}
+local inp_hooks = {}
 function on_input()
+    for b,i in pairs(buttons) do
+        cur_input[b] = input.get2(0,1,i)
+    end 
+    for _,h in ipairs(inp_hooks) do
+        h()
+    end
     for b,v in pairs(forced_input) do
         input.set2(0,1,buttons[b],v)
     end
+end
+
+function inp_hook(h) 
+    table.insert(inp_hooks, h)
 end
         
 function exec_hook(addr, cb, persist) 
     persist = persist or false
     local area, new_addr = convert_addr(addr)
+    local unreg
     if persist then
-        area:registerexec(new_addr, cb)
+        unreg = area:registerexec(new_addr, cb)
     else
-        local unreg
         unreg = area:registerexec(new_addr, function(a,v)
             cb(a,v)
             area:unregisterexec(new_addr, unreg)
         end)
     end
+    return {cancel = function() area:unregisterexec(new_addr, unreg) end}
 end
