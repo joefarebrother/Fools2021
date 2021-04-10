@@ -104,7 +104,7 @@ end
 --     try()
 -- end
 
-min_delay = 30
+min_delay = 36
 function farm_encounters(check)
     local checkfun = check
     if type(check) == "number" then checkfun = function(a) return a == check end end
@@ -112,7 +112,7 @@ function farm_encounters(check)
 
     local should_delay = false
     local delay = min_delay
-    local hook
+    local h1, h2
     local function loop()
         if should_delay then
             return
@@ -129,7 +129,8 @@ function farm_encounters(check)
         else
             forced_input.up = nil
             forced_input.down = nil
-            hook.cancel()
+            h1.cancel()
+            h2.cancel()
         end
     end
 
@@ -137,15 +138,11 @@ function farm_encounters(check)
     save_state(13)
 
 
-    hook = exec_hook(0xb1f5, function()
+    h1 = exec_hook(0xb1f5, function()
         local enc = read(0xdac9)
-        print("Encountered "..enc)
+        print(string.format("Encountered %d on frame %d", enc, movie.currentframe()))
         if checkfun(enc) then
             delay = min_delay
-            exec_hook(0xb510, function()
-                print("Saving")
-                save_state(12)
-            end)
         else
             should_delay = true
             load_state(12, function()
@@ -153,13 +150,18 @@ function farm_encounters(check)
                 cancel_sched()
                 forced_input.up = 0
                 forced_input.down = 0
-                delay = delay + 1
+                delay = delay + 2
                 wait(delay, function()
                     should_delay = false
                     loop()
                 end)
             end)
         end
+    end, true)
+
+    h2 = exec_hook(0xb510, function()
+        print("Saving")
+        save_state(12)
     end, true)
 
     loop()

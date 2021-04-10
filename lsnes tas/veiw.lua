@@ -2,6 +2,7 @@ require("utils")
 
 local views = {}
 local active = {}
+local views_ordered = {}
 
 function toggle_view(name)
     active[name] = not active[name]
@@ -9,9 +10,9 @@ function toggle_view(name)
 end
 
 function on_paint() 
-    for n,v in pairs(views) do
+    for _,n in ipairs(views_ordered) do
         if active[n] then
-            v()
+            views[n]()
         end
     end
 end
@@ -20,6 +21,7 @@ gui.repaint()
 
 function register_view(k, view)
     views[k] = view
+    table.insert(views_ordered, k)
     keyhook(k, toggle_view_khook)
 end 
 
@@ -47,6 +49,10 @@ end
 function display_addr(r, name, addr)
     display_two_cols(r, name..":", hex(read(addr)))
 end
+
+register_view('u', function()
+    gui.solidrectangle(0,0,500,500,0)
+end)
 
 register_view('q', function()
     display_addr(1, "Attack", 0xdace)
