@@ -14,12 +14,12 @@ hexToBin = {
     ['7'] = '0111',
     ['8'] = '1000',
     ['9'] = '1001',
-    ['A'] = '1010',
-    ['B'] = '1011',
-    ['C'] = '1100',
-    ['D'] = '1101',
-    ['E'] = '1110',
-    ['F'] = '1111',
+    ['a'] = '1010',
+    ['b'] = '1011',
+    ['c'] = '1100',
+    ['d'] = '1101',
+    ['e'] = '1110',
+    ['f'] = '1111',
 }
 
 function bin(num)
@@ -110,8 +110,18 @@ function save_state(slot)
     exec(string.format("save-state $SLOT:%d", slot))
 end
 
-function load_state(slot)
+local loadhook = nil
+function load_state(slot, cb)
     exec(string.format("load-state $SLOT:%d", slot))
+    loadhook = cb
+end
+
+function on_post_load()
+    if loadhook then
+        local l = loadhook
+        loadhook = nil
+        l()
+    end
 end
 
 buttons = {}
@@ -147,8 +157,8 @@ function exec_hook(addr, cb, persist)
         unreg = area:registerexec(new_addr, cb)
     else
         unreg = area:registerexec(new_addr, function(a,v)
-            cb(a,v)
             area:unregisterexec(new_addr, unreg)
+            cb(a,v) 
         end)
     end
     return {cancel = function() area:unregisterexec(new_addr, unreg) end}

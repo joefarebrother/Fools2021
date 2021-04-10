@@ -17,3 +17,31 @@ C: daredevil
 D: bravery
 E,F,10: crystals
 11,12: sharp beak/horn
+
+02040205020603040305040504060404 grassland: rattata 456, pidgey 45, metapod 564
+0E060E070F060F071006100711061105 steppe: rapidash 67, fearow 67, tauros 67, bulbasaur 65
+01060107010612061207140614071306 construct: shydon 676, nidorina 7, machop 67, snorlax 6
+05040505050607040705080508040904 corruption: glitchling 456, dragonite 45, magmar 54, tmz4 4
+
+0101070707080806020203070D040405020208080C0D040408080A0A0A0A040501FBBC24BF0305047F0BA5E3BC2BBF030703070124E3BC33BF04090407017C23
+
+01: shydon
+02: rattata
+03: pidgey
+04: metapod
+05: glitchling / missingno
+06: scyther (boss)
+07: dragonite
+08: magmar
+09: TMZ4 
+0A: ??? (boss) 
+0B: Ninetales (boss) 
+0C: Chancey (boss) 
+0D: Mewtwo (boss) 
+0E: Rapidash 
+0F: Fearow
+10: Tauros
+11: Bulbasaur
+12: Nidorina
+13: Snorlax
+14: Machop

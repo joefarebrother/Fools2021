@@ -39,34 +39,35 @@ local function row(n)
     return 1 + 12 * (n-1) 
 end
 
+function display_two_cols(r, c1, c2)
+    text(col1, row(r), c1)
+    text(col2, row(r), c2)
+end
+
+function display_addr(r, name, addr)
+    display_two_cols(r, name..":", hex(read(addr)))
+end
+
 register_view('q', function()
-    local atk = read(0xdace)
-    text(col1, row(1), "Attack:")
-    text(col2, row(1), hex(atk)) 
+    display_addr(1, "Attack", 0xdace)
 end)
 
 register_view('w', function()
     local dex = read(0xdacf)
-    text(col1, row(2), "Pokedex:")
-    text(col2, row(2), string.format("%s (%s)", hex(dex), bin(dex)))
+    display_two_cols(2, "Pokedex:", string.format("%s (%s)", hex(dex), bin(dex)))
 end)
 
 register_view('e', function()
-    local xchunkl, xchunkh, ychunkl, ychunkh, chunkrand = read(0xdab4), read(0xdab5), read(0xdab6), read(0xdab7), read(0xdabf)
-    text(col1, row(3), "X chunk:")
-    text(col1, row(4), "Y chunk:")
-    text(col1, row(5), "Rand:")
-    text(col2, row(3), hex(xchunkh)..hex(xchunkl))
-    text(col2, row(4), hex(ychunkh)..hex(ychunkl))
-    text(col2, row(5), hex(chunkrand))
+    local xchunkl, xchunkh, ychunkl, ychunkh, chunkrand = read(0xdab4), read(0xdab5), read(0xdab6), read(0xdab7)
+    display_two_cols(3, "X chunk:", hex(xchunkh)..hex(xchunkl))
+    display_two_cols(4, "Y chunk:", hex(ychunkh)..hex(ychunkl))
+    display_addr(5, "Rand", 0xdabf)
 end)
 
 register_view('r', function()
     local addr1, addr2 = 0xdb74, 0xdb7e
-    text(col1, row(6), hex(addr1)..":")
-    text(col1, row(7), hex(addr2)..":")
-    text(col2, row(6), hex(read(addr1)))
-    text(col2, row(7), hex(read(addr2)))
+    display_addr(6, hex(addr1), addr1)
+    display_addr(7, hex(addr2), addr2)
 end)
 
 local itemcol = 300
@@ -99,10 +100,16 @@ register_view('t', function()
         local item = read(addr)
         local qty = read(addr+1)
         local name = item_names[item]
+        local col = (i < 30 and itemcol) or col2
+        local row = (i < 30 and row(2+i)) or row(10+i-30)
         if not name then
             name = "unk"
         end
-        text(itemcol, row(2+i), string.format("%s x %s (%s)", hex(item), qty, name))
+        text(col, row, string.format("%s x %s (%s)", hex(item), qty, name))
         addr = addr+2
     end
+end)
+
+register_view('y', function()
+    display_addr(8, "Encounter", 0xdac9)
 end)

@@ -103,3 +103,64 @@ end
 --     end
 --     try()
 -- end
+
+min_delay = 30
+function farm_encounters(check)
+    local checkfun = check
+    if type(check) == "number" then checkfun = function(a) return a == check end end
+    if not check then error("Expecting a number or a function") end
+
+    local should_delay = false
+    local delay = min_delay
+    local hook
+    local function loop()
+        if should_delay then
+            return
+        end
+        if read(0xc45d - 40) == 0x52 then
+            forced_input.up = 1
+            forced_input.down = 0
+        else
+            forced_input.up = 0
+            forced_input.down = 1
+        end
+        if cur_input.B ~= 1 and read(0xdae4) < 40  then
+            wait(2, loop)
+        else
+            forced_input.up = nil
+            forced_input.down = nil
+            hook.cancel()
+        end
+    end
+
+    save_state(12)
+    save_state(13)
+
+
+    hook = exec_hook(0xb1f5, function()
+        local enc = read(0xdac9)
+        print("Encountered "..enc)
+        if checkfun(enc) then
+            delay = min_delay
+            exec_hook(0xb510, function()
+                print("Saving")
+                save_state(12)
+            end)
+        else
+            should_delay = true
+            load_state(12, function()
+                print(string.format("Delaying %d frames", delay))
+                cancel_sched()
+                forced_input.up = 0
+                forced_input.down = 0
+                delay = delay + 1
+                wait(delay, function()
+                    should_delay = false
+                    loop()
+                end)
+            end)
+        end
+    end, true)
+
+    loop()
+end
